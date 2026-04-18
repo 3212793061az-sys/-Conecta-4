@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Conecta 4</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #1e1e2f;
+      color: white;
+    }
+
+    h1 { margin-top: 20px; }
+
+    #tablero {
+      display: grid;
+      grid-template-columns: repeat(7, 70px);
+      gap: 5px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .celda {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: #ccc;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .celda:hover {
+      transform: scale(1.1);
+    }
+
+    .roja {
+      background: red;
+    }
+
+    .amarilla {
+      background: yellow;
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+
+</head>
+<body>
+
+<h1>🎮 Conecta 4</h1>
+<h3 id="turno">Turno: 🔴 Roja</h3>
+<h3 id="score">🔴 0 | 🟡 0</h3>
+
+<div id="tablero"></div>
+
+<button id="nueva">Nueva partida</button>
+<button id="reset">Reset marcador</button>
+
+<script>
+const FILAS = 6;
+const COLUMNAS = 7;
+
+let tablero = [];
+let turno = "R";
+let juegoActivo = true;
+let score = { R: 0, A: 0 };
+
+const tableroDiv = document.getElementById("tablero");
+const turnoTexto = document.getElementById("turno");
+const scoreTexto = document.getElementById("score");
+
+function crearTablero() {
+  tablero = Array.from({ length: FILAS }, () => Array(COLUMNAS).fill(""));
+  tableroDiv.innerHTML = "";
+
+  for (let f = 0; f < FILAS; f++) {
+    for (let c = 0; c < COLUMNAS; c++) {
+      const celda = document.createElement("div");
+      celda.classList.add("celda");
+      celda.dataset.f = f;
+      celda.dataset.c = c;
+
+      celda.addEventListener("click", manejarClick);
+
+      tableroDiv.appendChild(celda);
+    }
+  }
+}
+
+function manejarClick(e) {
+  if (!juegoActivo) return;
+
+  const col = parseInt(e.target.dataset.c);
+
+  for (let f = FILAS - 1; f >= 0; f--) {
+    if (tablero[f][col] === "") {
+      tablero[f][col] = turno;
+      actualizar();
+
+      if (verificarGanador(f, col)) {
+        setTimeout(() => alert(`🎉 Gana ${turno === "R" ? "🔴 Roja" : "🟡 Amarilla"}`), 100);
+        score[turno]++;
+        actualizarScore();
+        juegoActivo = false;
+      } else if (tablero[0].every(c => c !== "")) {
+        setTimeout(() => alert("🤝 Empate"), 100);
+        juegoActivo = false;
+      }
+
+      turno = turno === "R" ? "A" : "R";
+      turnoTexto.innerText = `Turno: ${turno === "R" ? "🔴 Roja" : "🟡 Amarilla"}`;
+      return;
+    }
+  }
+}
+
+function actualizar() {
+  const celdas = document.querySelectorAll(".celda");
+
+  celdas.forEach((celda) => {
+    const f = celda.dataset.f;
+    const c = celda.dataset.c;
+
+    celda.classList.remove("roja", "amarilla");
+
+    if (tablero[f][c] === "R") celda.classList.add("roja");
+    if (tablero[f][c] === "A") celda.classList.add("amarilla");
+  });
+}
+
+function verificarGanador(f, c) {
+  return (
+    contar(f, c, 0, 1) + contar(f, c, 0, -1) > 2 ||
+    contar(f, c, 1, 0) > 2 ||
+    contar(f, c, 1, 1) + contar(f, c, -1, -1) > 2 ||
+    contar(f, c, 1, -1) + contar(f, c, -1, 1) > 2
+  );
+}
+
+function contar(f, c, df, dc) {
+  let total = 0;
+  let jugador = tablero[f][c];
+
+  let i = f + df;
+  let j = c + dc;
+
+  while (i >= 0 && i < FILAS && j >= 0 && j < COLUMNAS && tablero[i][j] === jugador) {
+    total++;
+    i += df;
+    j += dc;
+  }
+
+  return total;
+}
+
+function actualizarScore() {
+  scoreTexto.innerText = `🔴 ${score.R} | 🟡 ${score.A}`;
+}
+
+document.getElementById("nueva").addEventListener("click", () => {
+  crearTablero();
+  juegoActivo = true;
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  score = { R: 0, A: 0 };
+  actualizarScore();
+});
+
+crearTablero();
+</script>
+
+</body>
+</html>
